@@ -1,0 +1,12 @@
+pymupdf
+python-docx
+python-pptx
+spacy
+keybert
+sentence-transformers
+transformers
+torch
+faiss-cpu
+fastapi
+uvicorn
+streamlit
