@@ -7,30 +7,39 @@ import os
 pytesseract.pytesseract.tesseract_cmd = r"D:\Ocr\tesseract.exe"
 
 def extract_with_pymupdf(file_path):
-    text = ""
+    pages = []
     doc = fitz.open(file_path)
 
-    for page in doc:
-        text += page.get_text("text")
+    for i, page in enumerate(doc):
+        text = page.get_text("text")
+
+        pages.append({
+            "page": i + 1,
+            "text": text
+        })
 
     doc.close()
-    return text
+    return pages
 
 
 def extract_with_pdfplumber(file_path):
-    import pdfplumber
-    text = ""
+    pages = []
     try:
         with pdfplumber.open(file_path) as pdf:
-            for page in pdf.pages:
+            for i, page in enumerate(pdf.pages):
                 page_text = page.extract_text()
+
                 if page_text:
-                    text += page_text
+                    pages.append({
+                        "page": i + 1,
+                        "text": page_text
+                    })
+
     except Exception as e:
         print("pdfplumber failed:", e)
-        return ""
+        return []
 
-    return text
+    return pages
 
 
 def extract_with_ocr(file_path):
@@ -53,7 +62,7 @@ def extract_with_ocr(file_path):
         text += page_text + "\n"
 
     doc.close()
-    return text
+    return [{"page": 1, "text": text}]
 
 
 def is_text_garbled(text):
@@ -71,32 +80,34 @@ def is_text_garbled(text):
 def extract_text_from_pdf(file_path):
 
     print("Trying PyMuPDF extraction...")
-    text = extract_with_pymupdf(file_path)
+    pages = extract_with_pymupdf(file_path)
+    combined_text = " ".join(p["text"] for p in pages)
 
-    if text and not is_text_garbled(text):
+    if combined_text and not is_text_garbled(combined_text):
         print("Extraction method used: PyMuPDF")
-        return text
+        return pages
 
     print("Text looks garbled. Trying pdfplumber...")
-    text = extract_with_pdfplumber(file_path)
+    pages = extract_with_pdfplumber(file_path)
+    combined_text = " ".join(p["text"] for p in pages)
 
-    if text and not is_text_garbled(text):
+    if combined_text and not is_text_garbled(combined_text):
         print("Extraction method used: pdfplumber")
-        return text
+        return pages
 
     print("Still bad. Switching to OCR...")
-    text = extract_with_ocr(file_path)
+    pages = extract_with_ocr(file_path)
 
     print("Extraction method used: OCR")
 
-    return text
+    return pages
 
 if __name__ == "__main__":
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sample_file = os.path.join(base_dir, "data", "uploads", "sample.pdf")
 
-    text = extract_text_from_pdf(sample_file)
+    pages = extract_text_from_pdf(sample_file)
 
-    print("\n----- Extracted Text -----\n")
-    print(text[:1000])
+    full_text = " ".join(p["text"] for p in pages)
+    print(full_text[:1000])
