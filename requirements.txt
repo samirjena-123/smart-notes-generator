@@ -1,6 +1,9 @@
 pymupdf
 python-docx
 python-pptx
+pdfplumber
+pytesseract
+Pillow
 spacy
 keybert
 sentence-transformers
