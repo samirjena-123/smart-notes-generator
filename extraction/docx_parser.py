@@ -1,23 +1,42 @@
 from docx import Document
 import os
 
-
 def extract_text_from_docx(file_path):
 
-    doc = Document(file_path)
     pages = []
+    text_parts = []
 
-    text = ""
+    try:
+        doc = Document(file_path)
+    except Exception as e:
+        print("Failed to open DOCX:", e)
+        return []
 
+    # Extract paragraphs
     for para in doc.paragraphs:
+
         line = para.text.strip()
 
         if line:
-            text += line + "\n"
+            text_parts.append(line)
+
+    # Extract tables
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+
+                cell_text = cell.text.strip()
+
+                if cell_text:
+                    text_parts.append(cell_text)
+
+    # Normalize whitespace
+    full_text = " ".join(text_parts)
+    full_text = " ".join(full_text.split())
 
     pages.append({
         "page": 1,
-        "text": text
+        "text": full_text
     })
 
     return pages
