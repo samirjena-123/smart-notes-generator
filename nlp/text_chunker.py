@@ -2,10 +2,19 @@ import os
 from utils.document_loader import load_document
 
 def chunk_text(documents, chunk_size=300, overlap=50):
+
+    if overlap >= chunk_size:
+        raise ValueError("overlap must be smaller than chunk_size")
+
     chunks = []
+
     for doc in documents:
 
+        if not doc["text"]:
+            continue
+
         words = doc["text"].split()
+
         start = 0
         chunk_id = 1
 
@@ -13,6 +22,10 @@ def chunk_text(documents, chunk_size=300, overlap=50):
 
             end = start + chunk_size
             chunk_words = words[start:end]
+
+            if len(chunk_words) < 20:
+                break
+
             chunk_text = " ".join(chunk_words)
 
             chunks.append({
