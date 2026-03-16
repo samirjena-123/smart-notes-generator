@@ -1,31 +1,39 @@
-from keybert import KeyBERT
+import re
 import os
 
 from utils.document_loader import load_document
 from nlp.text_chunker import chunk_text
+from keybert import KeyBERT
 
-import re
-
-
-# Load embedding model
 kw_model = KeyBERT("all-MiniLM-L6-v2")
 
 def extract_keywords(chunks, top_n=5):
+
+    if kw_model is None:
+        print("Keyword model unavailable.")
+        return chunks
+
     results = []
 
     for chunk in chunks:
-        cleaned_text = re.sub(r'\b\d+\b', '', chunk["text"])
 
-        keywords = kw_model.extract_keywords(
-            cleaned_text,
-            keyphrase_ngram_range=(1,2),
-            stop_words="english",
-            use_maxsum=True,
-            nr_candidates=20,
-            top_n=top_n
-        )     
+        if len(chunk["text"].split()) < 20:
+            keyword_list = []
 
-        keyword_list = [k[0] for k in keywords]
+        else:
+            cleaned_text = re.sub(r'\b\d+\b', '', chunk["text"])
+            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+            keywords = kw_model.extract_keywords(
+                cleaned_text,
+                keyphrase_ngram_range=(1,2),
+                stop_words="english",
+                use_maxsum=True,
+                nr_candidates=20,
+                top_n=top_n
+            )
+
+            keyword_list = [k[0] for k in keywords]
 
         results.append({
             "source": chunk["source"],
