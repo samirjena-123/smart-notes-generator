@@ -4,7 +4,7 @@ An NLP-based system that converts PDF, Word, and PowerPoint documents into struc
 
 ## Features
 
-- Multi-format document ingestion (PDF, DOCX, PPTX)
+- Multi-format document ingestion (Supported formats: PDF, DOCX, PPTX)
 - Automatic concept extraction
 - Structured notes generation
 - Exam question generation
