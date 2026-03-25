@@ -1,19 +1,21 @@
-import re
-
 def is_heading(text):
-    text = text.strip()
 
-    if len(text.split()) > 8:
+    text = text.strip()
+    words = text.split()
+
+    if len(words) == 0:
+        return False
+
+    if len(words) > 8:
+        return False
+
+    if text.endswith("."):
         return False
 
     if text.isupper():
         return True
 
-    if text.istitle():
-        return True
-
-    keywords = ["diversity", "ecosystem", "community", "conservation"]
-    if any(k in text.lower() for k in keywords) and len(text.split()) <= 6:
+    if text.istitle() and len(words) <= 5 and not text.isdigit():
         return True
 
     return False
@@ -21,26 +23,24 @@ def is_heading(text):
 
 def organize_notes(notes_data):
 
-    organized = {}
+    organized = {"GENERAL": []}
     current_topic = "GENERAL"
 
     for item in notes_data:
-        page = item["page"]
 
         for note in item["notes"]:
 
-            # detect headings
-            if is_heading(note):
-                current_topic = note.upper()
-                organized[current_topic] = []
+            if not note.strip():
                 continue
 
-            if current_topic not in organized:
-                organized[current_topic] = []
+            if is_heading(note):
+                current_topic = " ".join(note.strip().split()).upper()
+                organized.setdefault(current_topic, [])
+                continue
 
-            organized[current_topic].append(note)
+            organized.setdefault(current_topic, []).append(note)
 
-    return organized
+    return {k: v for k, v in organized.items() if v}
 
 if __name__ == "__main__":
 
