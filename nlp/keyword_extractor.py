@@ -5,13 +5,24 @@ from utils.document_loader import load_document
 from nlp.text_chunker import chunk_text
 from keybert import KeyBERT
 
-kw_model = KeyBERT("all-MiniLM-L6-v2")
+kw_model = None
+
+def load_keyword_model():
+    return KeyBERT("all-MiniLM-L6-v2")
+
 
 def extract_keywords(chunks, top_n=5):
 
+    global kw_model
     if kw_model is None:
-        print("Keyword model unavailable.")
-        return chunks
+        try:
+            kw_model = load_keyword_model()
+        except Exception as e:
+            print("Keyword model unavailable:", e)
+            return [
+                {**chunk, "keywords": []}
+                for chunk in chunks
+            ]
 
     results = []
 
@@ -22,18 +33,23 @@ def extract_keywords(chunks, top_n=5):
 
         else:
             cleaned_text = re.sub(r'\b\d+\b', '', chunk["text"])
+            cleaned_text = re.sub(r'[^\w\s]', ' ', cleaned_text)
             cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
 
-            keywords = kw_model.extract_keywords(
-                cleaned_text,
-                keyphrase_ngram_range=(1,2),
-                stop_words="english",
-                use_maxsum=True,
-                nr_candidates=20,
-                top_n=top_n
-            )
-
-            keyword_list = [k[0] for k in keywords]
+            try:
+                keywords = kw_model.extract_keywords(
+                    cleaned_text,
+                    keyphrase_ngram_range=(1,2),
+                    stop_words="english",
+                    use_maxsum=True,
+                    nr_candidates=20,
+                    top_n=top_n
+                )
+                keyword_list = [k[0] for k in keywords]
+                keyword_list = list(dict.fromkeys(keyword_list))
+            except Exception as e:
+                print("Keyword extraction failed:", e)
+                keyword_list = []
 
         results.append({
             "source": chunk["source"],
