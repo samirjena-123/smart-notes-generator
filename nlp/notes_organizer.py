@@ -1,46 +1,41 @@
-def is_heading(text):
-
-    text = text.strip()
-    words = text.split()
-
-    if len(words) == 0:
-        return False
-
-    if len(words) > 8:
-        return False
-
-    if text.endswith("."):
-        return False
-
-    if text.isupper():
-        return True
-
-    if text.istitle() and len(words) <= 5 and not text.isdigit():
-        return True
-
-    return False
-
-
 def organize_notes(notes_data):
 
     organized = {"GENERAL": []}
-    current_topic = "GENERAL"
 
     for item in notes_data:
 
-        for note in item["notes"]:
+        current_topic = "GENERAL"
+
+        section_heading = str(item.get("heading", "")).strip()
+        if section_heading:
+            current_topic = section_heading.strip()
+            organized.setdefault(current_topic, [])
+
+        for note in item.get("notes", []):
 
             if not note.strip():
                 continue
 
-            if is_heading(note):
-                current_topic = " ".join(note.strip().split()).upper()
+            # handle [Title] tags from ppt_parser
+            if note.startswith("[Title]"):
+                current_topic = note.replace("[Title]", "").strip().upper()
                 organized.setdefault(current_topic, [])
                 continue
 
-            organized.setdefault(current_topic, []).append(note)
+            # deduplicate notes under same topic
+            existing = organized.setdefault(current_topic, [])
+            normalized_existing = {
+                " ".join(x.lower().split())
+                for x in existing
+            }
+
+            normalized_note = " ".join(note.lower().split())
+
+            if normalized_note not in normalized_existing:
+                existing.append(note)
 
     return {k: v for k, v in organized.items() if v}
+
 
 if __name__ == "__main__":
 
@@ -50,13 +45,17 @@ if __name__ == "__main__":
     import os
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sample_file = os.path.join(base_dir, "data", "uploads", "sample.pdf")
+    sample_file = os.path.join(base_dir, "data", "uploads", "sample.docx")
 
     docs = load_document(sample_file)
     chunks = chunk_text(docs)
     notes = generate_notes(chunks)
 
     organized = organize_notes(notes)
+
+    print("\n=== HEADINGS IN NOTES ===")
+    for n in notes:
+        print(f"Chunk {n['chunk_id']} | heading='{n.get('heading', '')}'")
 
     for topic, points in organized.items():
         print("\n", topic)
